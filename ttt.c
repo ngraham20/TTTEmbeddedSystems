@@ -22,6 +22,10 @@ void draw(int b[9]) {
     printf(" %c | %c | %c\n",gridChar(b[6]),gridChar(b[7]),gridChar(b[8]));
 }
 
+void display(int b[9]) {
+    // aqui, puede activar los pines para prender los LED
+}
+
 int win(const int board[9]) {
     //determines if a player has won, returns 0 otherwise.
     unsigned wins[8][3] = {{0,1,2},{3,4,5},{6,7,8},{0,3,6},{1,4,7},{2,5,8},{0,4,8},{2,4,6}};
@@ -40,7 +44,7 @@ int minimax(int board[9], int player) {
     int winner = win(board);
     if(winner != 0) return winner*player;
 
-    move = -1;
+    int move = -1;
     int score = -2;//Losing moves are preferred to no move
     int i;
     for(i = 0; i < 9; ++i) {//For all moves,
@@ -84,6 +88,16 @@ void playerMove(int board[9]) {
         scanf("%d", &move);
         printf("\n");
     } while (move >= 9 || move < 0 && board[move] == 0);
+    board[move] = -1;
+}
+
+void playerMove02(int board[9]) {
+    int move = 0;
+    do {
+        printf("\nInput move ([0..8]): ");
+        // toma input de la placa aqui
+        
+    } while(move >= 9 || move < 0 && board[move] == 0);
     board[move] = -1;
 }
 
