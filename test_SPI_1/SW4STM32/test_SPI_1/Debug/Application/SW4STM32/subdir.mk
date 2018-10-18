@@ -4,14 +4,14 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 S_SRCS += \
-C:/Users/loder/Documents/Programming/Embedded/test_SPI_1/test_SPI_1/SW4STM32/startup_stm32f407xx.s 
+C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/test_SPI_1/SW4STM32/startup_stm32f407xx.s 
 
 OBJS += \
 ./Application/SW4STM32/startup_stm32f407xx.o 
 
 
 # Each subdirectory must supply rules for building sources it contributes
-Application/SW4STM32/startup_stm32f407xx.o: C:/Users/loder/Documents/Programming/Embedded/test_SPI_1/test_SPI_1/SW4STM32/startup_stm32f407xx.s
+Application/SW4STM32/startup_stm32f407xx.o: C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/test_SPI_1/SW4STM32/startup_stm32f407xx.s
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU GCC Assembler'
 	@echo $(PWD)
