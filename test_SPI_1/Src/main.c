@@ -159,6 +159,16 @@ void display_image_array(const uint8_t data[]){
     }
 }
 
+void apply_board(uint8_t *temp, uint8_t *board)
+{
+	const int MAX_LED = 8;
+	for (int i = 0; i < MAX_LED; i++)
+	{
+		board[i] += temp[i];
+	}
+	return;
+}
+
 void clear_screen()
 {
 	const uint8_t clearData[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
@@ -176,7 +186,6 @@ void flash_once(){
 
 }
 /* USER CODE END 1 */
-
 int main(void)
 {
 
@@ -205,7 +214,15 @@ int main(void)
 
     clear_screen();
     spi_init();
+
+    // initialize global variables
+    int spaces[3][3] = {{0}};
     uint8_t board[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
+    uint8_t temp_board[8] = {0};
+    uint8_t piece_temp = 0x01;
+    temp_board[6] += piece_temp;
+    temp_board[7] += piece_temp << 1;
+    apply_board(&temp_board, &board);
 
     HAL_Delay(1);
 
