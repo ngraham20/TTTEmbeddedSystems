@@ -159,6 +159,11 @@ void display_image_array(const uint8_t data[]){
     }
 }
 
+void block_space(int spaces[3][3], int x, int y)
+{
+	spaces[x][y] = 1;
+}
+
 void set_move(uint8_t *temp, uint8_t *board)
 {
 	const int MAX_LED = 8;
@@ -166,11 +171,17 @@ void set_move(uint8_t *temp, uint8_t *board)
 	{
 		board[i] += temp[i];
 	}
+
 	return;
 }
 
 void rest_at(uint8_t *temp_board, int x, int y, int turn)
 {
+	for(int i = 0; i < 8; i++)
+	{
+		temp_board[i] = 0;
+	}
+
 	uint8_t piece[2] = {0};
 	switch (turn)
 	{
@@ -194,6 +205,21 @@ void rest_at(uint8_t *temp_board, int x, int y, int turn)
 	case 2: temp_board[6] = piece[0];
 			temp_board[7] = piece[1];
 			return;
+	}
+}
+
+void move(char dir, int spaces[3][3], int * cur_x, int * cur_y)
+{
+	switch(dir)
+	{
+	case 'u': if(*cur_y != 0){*cur_y -= 1;};
+			  break;
+	case 'd': if(*cur_y != 2){*cur_y += 1;};
+	  	  	  break;
+	case 'l': if(*cur_x != 0){*cur_x -= 1;};
+  	  	  	  break;
+	case 'r': if(*cur_x != 2){*cur_x += 1;};
+	  	  	  break;
 	}
 }
 
@@ -247,9 +273,17 @@ int main(void)
     int spaces[3][3] = {{0}};
     uint8_t board[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
     int turn = 0; // 0 := player 1 ( x )
+    int cur_x = 1;
+    int cur_y = 1;
     uint8_t temp_board[8] = {0};
-    rest_at(&temp_board, 1,1,0);
+    rest_at(&temp_board, cur_x,cur_y,0);
+
+
+    move('r',&spaces,&cur_x,&cur_y);
+    rest_at(&temp_board, cur_x,cur_y,0);
     set_move(&temp_board,&board);
+    //block_space(&spaces,1,1);
+
 
     HAL_Delay(1);
 
