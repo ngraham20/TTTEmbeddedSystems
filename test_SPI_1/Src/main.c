@@ -139,7 +139,7 @@ void transmit(uint8_t column, uint8_t data){
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,GPIO_PIN_SET);
 }
 
-void draw(const uint8_t data[]){
+void display_array_image(const uint8_t data[]){
     const int MAX_DIGITS = 8;
    // uint8_t column;
 //    for (uint8_t i = 0x00; i < MAX_DIGITS; i++){
@@ -221,13 +221,13 @@ void move(char dir, uint8_t * cur_move, int * cur_x, int * cur_y, int turn)
 	case 'r': if(*cur_x != 2){*cur_x += 1;};
 	  	  	  break;
 	}
-	rest_at(cur_move, cur_x, cur_y, 0);
+	rest_at(cur_move, cur_x, cur_y, turn);
 }
 
 void clear_screen()
 {
 	const uint8_t clearData[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-	draw(clearData);
+	display_array_image(clearData);
 }
 
 void flash_once(){
@@ -254,7 +254,7 @@ void take_player_turn_01(uint8_t * board)
 	//display_image_array(cur_move);
 	move('r',&cur_move,&cur_x,&cur_y, 0);
 	apply_move(&cur_move, &temp_board);
-	draw(temp_board);
+	display_array_image(temp_board);
 	//draw(temp_board);
 	apply_move(&cur_move, board);
 
@@ -277,11 +277,35 @@ void take_player_turn_21(uint8_t * board)
 	apply_move(&cur_move, board);
 
 }
+
+void set_board(uint8_t * move, uint8_t * board)
+{
+	uint8_t temp[8] = {0};
+
+		// for each column, add the row data and board data
+		for(int i = 0; i < 0x08; i++)
+		{
+			temp[i] = move[i] + board[i];
+		}
+
+	memcpy(board, &temp, 8);
+}
+
+void draw(uint8_t * move, uint8_t * board)
+{
+	uint8_t temp[8] = {0};
+
+	// for each column, add the row data and board data
+	for(int i = 0; i < 0x08; i++)
+	{
+		temp[i] = move[i] + board[i];
+	}
+
+	display_array_image(temp);
+}
 /* USER CODE END 1 */
 int main(void)
 {
-
-
     /* MCU Configuration----------------------------------------------------------*/
 
     /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -310,13 +334,33 @@ int main(void)
     // initialize global variables
 //    int spaces[3][3] = {{0}};
     uint8_t board[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
-    draw(board);
-    HAL_Delay(1000);
-    take_player_turn_01(board);
-    draw(board);
-    HAL_Delay(1000);
-    take_player_turn_21(board);
-    draw(board);
+    uint8_t cur_move[8] = {0};
+    int cur_x = 1;
+	int cur_y = 1;
+	//display_image_array(temp_board);
+	// simulate a player's turn for now
+	rest_at(&cur_move, &cur_x, &cur_y, 0); // begin at begining
+	draw(&cur_move, &board);
+	set_board(&cur_move, &board);
+	move('r',&cur_move,&cur_x,&cur_y,0);
+	draw(&cur_move, &board);
+	set_board(&cur_move, &board);
+	move('u',&cur_move,&cur_x,&cur_y,0);
+	draw(&cur_move, &board);
+	set_board(&cur_move, &board);
+
+
+
+
+
+
+//    draw(board);
+//    HAL_Delay(1000);
+//    take_player_turn_01(board);
+//    draw(board);
+//    HAL_Delay(1000);
+//    take_player_turn_21(board);
+//    draw(board);
 //    int turn = 0; // 0 := player 1 ( x )
 //    int cur_x = 1;
 //    int cur_y = 1;
@@ -339,7 +383,7 @@ int main(void)
     //block_space(&spaces,1,1);
 
 
-    HAL_Delay(1);
+//    HAL_Delay(1);
 
     /* USER CODE END 2 */
 
@@ -347,7 +391,7 @@ int main(void)
     /* USER CODE BEGIN WHILE */
 
     while (1){
-        draw(board);
+        display_array_image(board);
         HAL_Delay(10);
     }
 }
