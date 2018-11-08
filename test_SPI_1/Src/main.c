@@ -139,7 +139,7 @@ void transmit(uint8_t column, uint8_t data){
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,GPIO_PIN_SET);
 }
 
-void display_image_array(const uint8_t data[]){
+void draw(const uint8_t data[]){
     const int MAX_DIGITS = 8;
    // uint8_t column;
 //    for (uint8_t i = 0x00; i < MAX_DIGITS; i++){
@@ -164,51 +164,51 @@ void block_space(int spaces[3][3], int x, int y)
 	spaces[x][y] = 1;
 }
 
-void set_move(uint8_t *temp, uint8_t *board)
+void apply_move(uint8_t *src, uint8_t *dest)
 {
 	const int MAX_LED = 8;
 	for (int i = 0; i < MAX_LED; i++)
 	{
-		board[i] += temp[i];
+		dest[i] += src[i];
 	}
 
 	return;
 }
 
-void rest_at(uint8_t *temp_board, int x, int y, int turn)
+void rest_at(uint8_t * cur_move, int * x, int * y, int turn)
 {
 	for(int i = 0; i < 8; i++)
 	{
-		temp_board[i] = 0;
+		cur_move[i] = 0;
 	}
 
 	uint8_t piece[2] = {0};
 	switch (turn)
 	{
-	case 0: piece[0] = 0x01 << 3*y;
-			piece[1] = 0x02 << 3*y;
+	case 0: piece[0] = 0x01 << 3**y;
+			piece[1] = 0x02 << 3**y;
 			break;
 	case 1:
-			piece[0] = 0x02 << 3*y;
-			piece[1] = 0x01 << 3*y;
+			piece[0] = 0x02 << 3**y;
+			piece[1] = 0x01 << 3**y;
 			break;
 	}
 
-	switch (x)
+	switch (*x)
 	{
-	case 0: temp_board[0] = piece[0];
-			temp_board[1] = piece[1];
+	case 0: cur_move[0] = piece[0];
+			cur_move[1] = piece[1];
 			return;
-	case 1: temp_board[3] = piece[0];
-			temp_board[4] = piece[1];
+	case 1: cur_move[3] = piece[0];
+			cur_move[4] = piece[1];
 			return;
-	case 2: temp_board[6] = piece[0];
-			temp_board[7] = piece[1];
+	case 2: cur_move[6] = piece[0];
+			cur_move[7] = piece[1];
 			return;
 	}
 }
 
-void move(char dir, int spaces[3][3], int * cur_x, int * cur_y)
+void move(char dir, uint8_t * cur_move, int * cur_x, int * cur_y, int turn)
 {
 	switch(dir)
 	{
@@ -221,12 +221,13 @@ void move(char dir, int spaces[3][3], int * cur_x, int * cur_y)
 	case 'r': if(*cur_x != 2){*cur_x += 1;};
 	  	  	  break;
 	}
+	rest_at(cur_move, cur_x, cur_y, 0);
 }
 
 void clear_screen()
 {
 	const uint8_t clearData[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-	display_image_array(clearData);
+	draw(clearData);
 }
 
 void flash_once(){
@@ -237,6 +238,43 @@ void flash_once(){
     HAL_Delay(100);
     transmit(0x09,0x00);
     transmit(0x0B,0x07);
+
+}
+
+void take_player_turn_01(uint8_t * board)
+{
+	int cur_x = 0;
+	int cur_y = 1;
+	uint8_t cur_move[8] = {0};
+	uint8_t temp_board[8] = {0};
+	memcpy(&temp_board, board, 8); // set the temp to the board
+	//display_image_array(temp_board);
+	// simulate a player's turn for now
+	rest_at(&cur_move, &cur_x, &cur_y, 0); // begin at begining
+	//display_image_array(cur_move);
+	move('r',&cur_move,&cur_x,&cur_y, 0);
+	apply_move(&cur_move, &temp_board);
+	draw(temp_board);
+	//draw(temp_board);
+	apply_move(&cur_move, board);
+
+}
+void take_player_turn_21(uint8_t * board)
+{
+	int cur_x = 0;
+	int cur_y = 1;
+	uint8_t cur_move[8] = {0};
+	uint8_t temp_board[8] = {0};
+	memcpy(&temp_board, board, 8); // set the temp to the board
+	//draw(temp_board);
+	// simulate a player's turn for now
+	rest_at(&cur_move, &cur_x, &cur_y, 0); // begin at begining
+	//draw(cur_move);
+	move('r',&cur_move,&cur_x,&cur_y, 0);
+	move('r',&cur_move,&cur_x,&cur_y, 0);
+	apply_move(&cur_move, &temp_board);
+	//draw(temp_board);
+	apply_move(&cur_move, board);
 
 }
 /* USER CODE END 1 */
@@ -270,18 +308,34 @@ int main(void)
     spi_init();
 
     // initialize global variables
-    int spaces[3][3] = {{0}};
+//    int spaces[3][3] = {{0}};
     uint8_t board[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
-    int turn = 0; // 0 := player 1 ( x )
-    int cur_x = 1;
-    int cur_y = 1;
-    uint8_t temp_board[8] = {0};
-    rest_at(&temp_board, cur_x,cur_y,0);
+    draw(board);
+    HAL_Delay(1000);
+    take_player_turn_01(board);
+    draw(board);
+    HAL_Delay(1000);
+    take_player_turn_21(board);
+    draw(board);
+//    int turn = 0; // 0 := player 1 ( x )
+//    int cur_x = 1;
+//    int cur_y = 1;
+//    uint8_t temp_board[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
+//    uint8_t cur_move[8] = {0};
+//    //display_image_array(cur_move); // clear board
+//    rest_at(&cur_move, &cur_x,&cur_y,&turn);
+//    apply_move(&cur_move, &temp_board);
+    //draw(temp_board);
 
 
-    move('r',&spaces,&cur_x,&cur_y);
-    rest_at(&temp_board, cur_x,cur_y,0);
-    set_move(&temp_board,&board);
+
+//    move('r',&spaces,&cur_move,&cur_x,&cur_y,&turn);
+//    display_image_array(cur_move);
+//    combine_boards(&cur_move, &temp_board);
+//    display_image_array(temp_board);
+//    //rest_at(&cur_move, cur_x,cur_y,0);
+//    combine_boards(&temp_board,&board);
+//    display_image_array(board);
     //block_space(&spaces,1,1);
 
 
@@ -293,7 +347,7 @@ int main(void)
     /* USER CODE BEGIN WHILE */
 
     while (1){
-        display_image_array(board);
+        draw(board);
         HAL_Delay(10);
     }
 }
