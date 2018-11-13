@@ -175,7 +175,7 @@ void apply_move(uint8_t *src, uint8_t *dest)
 	return;
 }
 
-void rest_at(uint8_t * cur_move, int * x, int * y, int turn)
+void rest_at(uint8_t * cur_move, int * x, int * y, int player)
 {
 	for(int i = 0; i < 8; i++)
 	{
@@ -183,9 +183,9 @@ void rest_at(uint8_t * cur_move, int * x, int * y, int turn)
 	}
 
 	uint8_t piece[2] = {0};
-	switch (turn)
+	switch (player)
 	{
-	case 0: piece[0] = 0x01 << 3**y;
+	case -1: piece[0] = 0x01 << 3**y;
 			piece[1] = 0x02 << 3**y;
 			break;
 	case 1:
@@ -241,43 +241,6 @@ void flash_once(){
 
 }
 
-void take_player_turn_01(uint8_t * board)
-{
-	int cur_x = 0;
-	int cur_y = 1;
-	uint8_t cur_move[8] = {0};
-	uint8_t temp_board[8] = {0};
-	memcpy(&temp_board, board, 8); // set the temp to the board
-	//display_image_array(temp_board);
-	// simulate a player's turn for now
-	rest_at(&cur_move, &cur_x, &cur_y, 0); // begin at begining
-	//display_image_array(cur_move);
-	move('r',&cur_move,&cur_x,&cur_y, 0);
-	apply_move(&cur_move, &temp_board);
-	display_array_image(temp_board);
-	//draw(temp_board);
-	apply_move(&cur_move, board);
-
-}
-void take_player_turn_21(uint8_t * board)
-{
-	int cur_x = 0;
-	int cur_y = 1;
-	uint8_t cur_move[8] = {0};
-	uint8_t temp_board[8] = {0};
-	memcpy(&temp_board, board, 8); // set the temp to the board
-	//draw(temp_board);
-	// simulate a player's turn for now
-	rest_at(&cur_move, &cur_x, &cur_y, 0); // begin at begining
-	//draw(cur_move);
-	move('r',&cur_move,&cur_x,&cur_y, 0);
-	move('r',&cur_move,&cur_x,&cur_y, 0);
-	apply_move(&cur_move, &temp_board);
-	//draw(temp_board);
-	apply_move(&cur_move, board);
-
-}
-
 void set_board(uint8_t * move, uint8_t * board)
 {
 	uint8_t temp[8] = {0};
@@ -303,6 +266,143 @@ void draw(uint8_t * move, uint8_t * board)
 
 	display_array_image(temp);
 }
+
+void update_board_spaces(int spaces[9], uint8_t * board)
+{
+	// reset board for fresh copy from spaces
+	uint8_t empty_board[8] = {0};
+	memcpy(board, &empty_board, 8);
+	
+	uint8_t cur_move[8] = {0};
+	for (int i = 0; i < 9; i++)
+	{ // player is -1, comp is 1, empty is 0
+			int x = i % 3;
+			int y = i div 3;
+		if(spaces[i] == -1)
+		{
+			// figure out math for which two numbers to change moves
+			rest_at(&cur_move, &x, &y, -1);
+			set_board(&cur_move, &board);
+		}
+		else if (spaces[i] == 1)
+		{
+			// same as above
+			rest_at(&cur_move, &x, &y, 1);
+			set_board(&cur_move, &board);
+		}
+		// else don't do anything of course
+		
+	}
+}
+
+// here begins the TTT functions
+//char gridChar(int i) {
+//    switch(i) {
+//        case -1:
+//            return 'X';
+//        case 0:
+//            return ' ';
+//        case 1:
+//            return 'O';
+//    }
+//}
+//
+//void draw(int b[9]) {
+//    printf(" %c | %c | %c\n",gridChar(b[0]),gridChar(b[1]),gridChar(b[2]));
+//    printf("---+---+---\n");
+//    printf(" %c | %c | %c\n",gridChar(b[3]),gridChar(b[4]),gridChar(b[5]));
+//    printf("---+---+---\n");
+//    printf(" %c | %c | %c\n",gridChar(b[6]),gridChar(b[7]),gridChar(b[8]));
+//}
+
+// checks the win state using the int board (in our case, spaces)
+int win(const int board[9]) {
+    //determines if a player has won, returns 0 otherwise.
+    unsigned wins[8][3] = {{0,1,2},{3,4,5},{6,7,8},{0,3,6},{1,4,7},{2,5,8},{0,4,8},{2,4,6}};
+    int i;
+    for(i = 0; i < 8; ++i) {
+        if(board[wins[i][0]] != 0 &&
+           board[wins[i][0]] == board[wins[i][1]] &&
+           board[wins[i][0]] == board[wins[i][2]])
+            return board[wins[i][2]];
+    }
+    return 0;
+}
+
+int minimax(int board[9], int player) {
+    //How is the position like for player (their turn) on board?
+    int winner = win(board);
+    if(winner != 0) return winner*player;
+
+    int move = -1;
+    int score = -2;//Losing moves are preferred to no move
+    int i;
+    for(i = 0; i < 9; ++i) {//For all moves,
+        if(board[i] == 0) {//If legal,
+            board[i] = player;//Try the move
+            int thisScore = -minimax(board, player*-1);
+            if(thisScore > score) {
+                score = thisScore;
+                move = i;
+            }//Pick the one that's worst for the opponent
+            board[i] = 0;//Reset board after try
+        }
+    }
+    if(move == -1) return 0;
+    return score;
+}
+
+void computerMove(int board[9]) {
+    int move = -1;
+    int score = -2;
+    int i;
+    for(i = 0; i < 9; ++i) {
+        if(board[i] == 0) {
+            board[i] = 1;
+            int tempScore = -minimax(board, -1);
+            board[i] = 0;
+            if(tempScore > score) {
+                score = tempScore;
+                move = i;
+            }
+        }
+    }
+    //returns a score based on minimax tree at a given node.
+    board[move] = 1;
+}
+
+// this computer will allow it to play itself
+void computerMove02(int board[9]) {
+    int move = -1;
+    int score = -2;
+    int i;
+    for(i = 0; i < 9; ++i) {
+        if(board[i] == 0) {
+            board[i] = -1;
+            int tempScore = -minimax(board, 1);
+            board[i] = 0;
+            if(tempScore > score) {
+                score = tempScore;
+                move = i;
+            }
+        }
+    }
+    //returns a score based on minimax tree at a given node.
+    board[move] = 1;
+}
+
+void playerMove(int board[9]) {
+    int move = 0;
+    do {
+        printf("\nInput move ([0..8]): ");
+        scanf("%d", &move);
+        printf("\n");
+    } while (move >= 9 || move < 0 && board[move] == 0);
+    board[move] = -1;
+}
+
+// END TTT FUNCTIONS
+
 /* USER CODE END 1 */
 int main(void)
 {
@@ -333,66 +433,54 @@ int main(void)
 
     // initialize global variables
 //    int spaces[3][3] = {{0}};
+	int spaces[9] = {0};
+	int player = 0;
+	int gameWon = 0;
     uint8_t board[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
     uint8_t cur_move[8] = {0};
     int cur_x = 1;
 	int cur_y = 1;
 	//display_image_array(temp_board);
+	
+	
 	// simulate a player's turn for now
-	rest_at(&cur_move, &cur_x, &cur_y, 0); // begin at begining
+	rest_at(&cur_move, &cur_x, &cur_y, player); // begin at begining
 	draw(&cur_move, &board);
 	set_board(&cur_move, &board);
-	move('r',&cur_move,&cur_x,&cur_y,0);
+	move('r',&cur_move,&cur_x,&cur_y,player);
 	draw(&cur_move, &board);
 	set_board(&cur_move, &board);
-	move('u',&cur_move,&cur_x,&cur_y,0);
+	move('u',&cur_move,&cur_x,&cur_y,player);
 	draw(&cur_move, &board);
 	set_board(&cur_move, &board);
-
-
-
-
-
-
-//    draw(board);
-//    HAL_Delay(1000);
-//    take_player_turn_01(board);
-//    draw(board);
-//    HAL_Delay(1000);
-//    take_player_turn_21(board);
-//    draw(board);
-//    int turn = 0; // 0 := player 1 ( x )
-//    int cur_x = 1;
-//    int cur_y = 1;
-//    uint8_t temp_board[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
-//    uint8_t cur_move[8] = {0};
-//    //display_image_array(cur_move); // clear board
-//    rest_at(&cur_move, &cur_x,&cur_y,&turn);
-//    apply_move(&cur_move, &temp_board);
-    //draw(temp_board);
-
-
-
-//    move('r',&spaces,&cur_move,&cur_x,&cur_y,&turn);
-//    display_image_array(cur_move);
-//    combine_boards(&cur_move, &temp_board);
-//    display_image_array(temp_board);
-//    //rest_at(&cur_move, cur_x,cur_y,0);
-//    combine_boards(&temp_board,&board);
-//    display_image_array(board);
-    //block_space(&spaces,1,1);
-
-
-//    HAL_Delay(1);
 
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
-
     while (1){
-        display_array_image(board);
-        HAL_Delay(10);
+    	// while nobody has won
+		if (!gameWon)
+		{
+			for(turn = 0; turn < 9 & win(spaces) == 0; ++turn) {
+				if((turn+player) % 2 == 0)
+				{
+					computerMove(spaces);
+					// update the board with the move
+					update_board_spaces(spaces, &board);
+				}
+				else {
+					computerMove02(spaces);
+					// draw the board
+					update_board_spaces(spaces, &board);
+				}
+				HAL_Delay(2000);
+				display_array_image(board);
+			}
+			gameWon = 1;
+		}
+		// once the game has ended, continue to print the board
+		display_array_image(board);
     }
 }
 
