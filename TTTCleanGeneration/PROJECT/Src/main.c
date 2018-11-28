@@ -52,7 +52,7 @@ SPI_HandleTypeDef hspi2;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+uint32_t adc1, adc2;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -349,6 +349,16 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  HAL_ADC_Start(&hadc1);
+	  HAL_ADC_PollForConversion(&hadc1,1);
+   	  adc1=(HAL_ADC_GetValue(&hadc1)/500);
+	  HAL_Delay (1);
+
+	  HAL_ADC_Start(&hadc2);
+	  HAL_ADC_PollForConversion(&hadc2,1);
+	  adc2=(HAL_ADC_GetValue(&hadc2)/50);
+	  HAL_Delay (1);
+
 	  display_array_image(board);
   /* USER CODE END WHILE */
 

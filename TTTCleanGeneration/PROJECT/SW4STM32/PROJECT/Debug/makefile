@@ -35,7 +35,7 @@ all: PROJECT.elf
 PROJECT.elf: $(OBJS) $(USER_OBJS) ../STM32F407VGTx_FLASH.ld
 	@echo 'Building target: $@'
 	@echo 'Invoking: MCU GCC Linker'
-	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -specs=nosys.specs -specs=nano.specs -T"../STM32F407VGTx_FLASH.ld" -Wl,-Map=output.map -Wl,--gc-sections -o "PROJECT.elf" @"objects.list" $(USER_OBJS) $(LIBS) -lm
+	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -L"D:\Documentos\Repository\TicTacToe\TTTEmbeddedSystems\TTTCleanGeneration\PROJECT\Inc" -L"D:\Documentos\Repository\TicTacToe\TTTEmbeddedSystems\TTTCleanGeneration\PROJECT\Drivers\STM32F4xx_HAL_Driver\Inc" -L"D:\Documentos\Repository\TicTacToe\TTTEmbeddedSystems\TTTCleanGeneration\PROJECT\Drivers" -specs=nosys.specs -specs=nano.specs -T"../STM32F407VGTx_FLASH.ld" -Wl,-Map=output.map -Wl,--gc-sections -o "PROJECT.elf" @"objects.list" $(USER_OBJS) $(LIBS) -lm
 	@echo 'Finished building target: $@'
 	@echo ' '
 	$(MAKE) --no-print-directory post-build
