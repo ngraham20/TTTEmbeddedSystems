@@ -52,7 +52,7 @@ SPI_HandleTypeDef hspi2;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-uint32_t adc1, adc2;
+uint32_t adcX, adcY;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -273,6 +273,19 @@ void update_board_spaces(int spaces[9], uint8_t * board)
 
 	}
 }
+
+int win(const int board[9]) {
+    //determines if a player has won, returns 0 otherwise.
+    unsigned wins[8][3] = {{0,1,2},{3,4,5},{6,7,8},{0,3,6},{1,4,7},{2,5,8},{0,4,8},{2,4,6}};
+    int i;
+    for(i = 0; i < 8; ++i) {
+        if(board[wins[i][0]] != 0 &&
+           board[wins[i][0]] == board[wins[i][1]] &&
+           board[wins[i][0]] == board[wins[i][2]])
+            return board[wins[i][2]];
+    }
+    return 0;
+}
 /* USER CODE END 0 */
 
 /**
@@ -310,56 +323,123 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   spi_init();\
-  	int spaces[9] = {0};
-  	int player = -1;
-  	int gameWon = 0;
-      uint8_t board[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
-      uint8_t cur_move[8] = {0};
-      int cur_x = 0;
-  	int cur_y = 0;
+  int spaces[9] = {0};
+  int player = -1;
+  int gameWon = 0;
+  uint8_t board[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
+  uint8_t cur_move[8] = {0};
+  int cur_x = 0;
+  int cur_y = 0;
   	//display_image_array(temp_board);
 
 
   	//simulate a player's turn for now
   	rest_at(&cur_move, &cur_x, &cur_y, player); // begin at begining
   	draw(&cur_move, &board);
-  	HAL_Delay(1000);
-  	move('r',&cur_move,&board,&cur_x,&cur_y,player);
-  	HAL_Delay(1000);
-  	move('r',&cur_move,&board,&cur_x,&cur_y,player);
-  	HAL_Delay(1000);
-  	move('d',&cur_move,&board,&cur_x,&cur_y,player);
-  	set_board(&cur_move, &board);
-
-  	HAL_Delay(1000);
-  	player = player*-1;
-  	cur_x = 0;
-  	cur_y = 0;
-  	rest_at(&cur_move, &cur_x, &cur_y, player); // begin at begining
-  	draw(&cur_move, &board);
-  	HAL_Delay(1000);
-  	move('d',&cur_move,&board,&cur_x,&cur_y,player);
-  	HAL_Delay(1000);
-  	move('r',&cur_move,&board,&cur_x,&cur_y,player);
-  	set_board(&cur_move, &board);
-  	HAL_Delay(1000);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_ADC_Start(&hadc1);
-	  HAL_ADC_PollForConversion(&hadc1,1);
-   	  adc1=(HAL_ADC_GetValue(&hadc1)/500);
-	  HAL_Delay (1);
+	  if (!gameWon)
+	  {
+		  HAL_ADC_Start(&hadc1);
+		  HAL_ADC_PollForConversion(&hadc1,1);
+		  adcY=(HAL_ADC_GetValue(&hadc1)/500);
+		  HAL_ADC_Stop(&hadc1);
+		  HAL_Delay (1);
 
-	  HAL_ADC_Start(&hadc2);
-	  HAL_ADC_PollForConversion(&hadc2,1);
-	  adc2=(HAL_ADC_GetValue(&hadc2)/50);
-	  HAL_Delay (1);
+		  HAL_ADC_Start(&hadc2);
+		  HAL_ADC_PollForConversion(&hadc2,1);
+		  adcX=(HAL_ADC_GetValue(&hadc2)/500);
+		  HAL_ADC_Stop(&hadc2);
+		  HAL_Delay (1);
 
-	  display_array_image(board);
+		  int deadzone[2] = {1,7};
+		  // if in deadzone
+		  if (adcY >= deadzone[0] && adcY <= deadzone[1])
+		  {
+			  // is in deadzone, don't do anything.
+		  }
+
+		  // if up
+		  if (adcY > deadzone[1])
+		  {
+			  // move down once space
+			  move('d',&cur_move,&board,&cur_x,&cur_y,player);
+			  HAL_Delay(175);
+
+		  }
+
+		  // if down
+		  if (adcY < deadzone[0])
+		  {
+			  // move up once space
+			  move('u',&cur_move,&board,&cur_x,&cur_y,player);
+			  HAL_Delay(175);
+		  }
+
+		  if (adcX >= deadzone[0] && adcX <= deadzone[1])
+		  {
+			  // is in deadzone, don't do anything.
+		  }
+
+		  // if left
+		  if (adcX < deadzone[0])
+		  {
+			  // move left one space
+			  move('l',&cur_move,&board,&cur_x,&cur_y,player);
+			  HAL_Delay(175);
+		  }
+
+		  // if right
+		  if (adcX > deadzone[1])
+		  {
+			  // move right once space
+			  move('r',&cur_move,&board,&cur_x,&cur_y,player);
+			  HAL_Delay(175);
+		  }
+
+		  // when l3 click
+		  int buttonIsDown = HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3);
+		  if(buttonIsDown)
+		  {
+			  if (spaces[cur_x + 3*cur_y] == 0)
+			  {
+				  set_board(&cur_move, &board);
+				  spaces[cur_x + 3*cur_y] = player;
+				  player = player * -1;
+				  rest_at(&cur_move, &cur_x, &cur_y, player); // begin at begining
+				  draw(&cur_move, &board);
+			  }
+			  HAL_Delay(300);
+		  }
+		  int winner = win(spaces);
+		  if (winner != 0)
+		  {
+			  // someone has won!
+			  if (winner == -1)
+			  {
+				  // computer won
+				  uint8_t tempBoard[8] = {0x00,0x06,0x06,0x00,0x00,0x60,0x60,0x00};
+				  memcpy(&board, &tempBoard, 8);
+				  gameWon = 1;
+			  }
+			  else
+			  {
+				  // player won
+				  uint8_t tempBoard[8] = {0x00,0x60,0x60,0x00,0x00,0x06,0x06,0x00};
+				  memcpy(&board, &tempBoard, 8);
+				  gameWon = 1;
+			  }
+		  }
+		  else // only actually draw the real board if there is no winner yet
+			  draw(&cur_move, &board);
+	  }
+	  else
+		  display_array_image(board);
+
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
@@ -603,7 +683,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PA3 */
   GPIO_InitStruct.Pin = GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PA4 */
