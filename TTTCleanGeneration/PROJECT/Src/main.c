@@ -322,7 +322,7 @@ int main(void)
   MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
 
-  spi_init();
+  spi_init();\
   int spaces[9] = {0};
   int player = -1;
   int gameWon = 0;
