@@ -61,7 +61,17 @@ src/main.o: ../src/main.c \
  C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/HAL_Driver/Inc/stm32f4xx_hal_pcd.h \
  C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/HAL_Driver/Inc/stm32f4xx_ll_usb.h \
  C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/HAL_Driver/Inc/stm32f4xx_hal_pcd_ex.h \
- C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/HAL_Driver/Inc/stm32f4xx_hal_hcd.h
+ C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/HAL_Driver/Inc/stm32f4xx_hal_hcd.h \
+ C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
+ C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/inc/FreeRTOSConfig.h \
+ C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h \
+ C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/portable.h \
+ C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h \
+ C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h \
+ C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h \
+ C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
+ C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
+ C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
 
 C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/inc/main.h:
 
@@ -188,3 +198,23 @@ C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALD
 C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/HAL_Driver/Inc/stm32f4xx_hal_pcd_ex.h:
 
 C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/HAL_Driver/Inc/stm32f4xx_hal_hcd.h:
+
+C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
+
+C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/inc/FreeRTOSConfig.h:
+
+C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h:
+
+C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/portable.h:
+
+C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h:
+
+C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h:
+
+C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h:
+
+C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/task.h:
+
+C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/list.h:
+
+C:/Users/loder/Documents/repos/TicTacToeEmbedded/TTT/TTTEmbeddedSystems/RTOSHALDISC/Middlewares/Third_Party/FreeRTOS/Source/include/queue.h:

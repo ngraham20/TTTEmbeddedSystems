@@ -39,6 +39,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_hal.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -62,6 +65,61 @@ static void MX_SPI2_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
 
+struct TaskParams
+  {
+	  int spaces[9];
+	  int player;
+	  int gameWon;
+	  uint8_t board[8];
+	  uint8_t cur_move[8];
+	  int cur_x;
+	  int cur_y;
+	  int joyYVal;
+	  int joyXVal;
+	  int buttonAVal;
+  } TaskParams_default = {
+		  .player = -1,
+		  .gameWon = 0,
+		  .spaces[0] = 0x00,
+		  .spaces[1] = 0x00,
+		  .spaces[2] = 0x00,
+		  .spaces[3] = 0x00,
+		  .spaces[4] = 0x00,
+		  .spaces[5] = 0x00,
+		  .spaces[6] = 0x00,
+		  .spaces[7] = 0x00,
+		  .spaces[0] = 0x00,
+		  .board[0] = 0x24,
+		  .board[1] = 0x24,
+		  .board[2] = 0xFF,
+		  .board[3] = 0x24,
+		  .board[4] = 0x24,
+		  .board[5] = 0xFF,
+		  .board[6] = 0x24,
+		  .board[7] = 0x24,
+		  .cur_move[0] = 0x00,
+		  .cur_move[1] = 0x00,
+		  .cur_move[2] = 0x00,
+		  .cur_move[3] = 0x00,
+		  .cur_move[4] = 0x00,
+		  .cur_move[5] = 0x00,
+		  .cur_move[6] = 0x00,
+		  .cur_move[7] = 0x00,
+		  .cur_x = 0,
+		  .cur_y = 0,
+		  .joyYVal = -1,
+		  .joyXVal = -1,
+		  .buttonAVal = -1
+	  };
+
+  typedef struct ImageData
+  {
+	  uint8_t board[8];
+	  uint8_t cur_move[8];
+  } imageData;
+
+  QueueHandle_t xQueueSense, xQueueDisplay;
+
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 
@@ -72,7 +130,7 @@ void slr_init(){
     uint8_t slr_reg1[2] = {0x0B, 0x07};
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,GPIO_PIN_RESET);
     HAL_SPI_Transmit(&hspi2,slr_reg1,2,100);
-	for(int i = 0; i < 50; i++){} // 50 microsegundos
+	for(int i = 0; i < 50; i++){} // 50 microseconds
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,GPIO_PIN_SET);
 }
 
@@ -81,7 +139,7 @@ void intensity_init()
     uint8_t intensity_reg1[2] = {0x05,0x0F};
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,GPIO_PIN_RESET);
     HAL_SPI_Transmit(&hspi2,intensity_reg1,2,100);
-	for(int i = 0; i < 50; i++){} // 50 microsegundos
+	for(int i = 0; i < 50; i++){} // 50 microseconds
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,GPIO_PIN_SET);
 }
 
@@ -89,7 +147,7 @@ void decode_init(){
     uint8_t decode_reg1[2] = {0x09, 0x00};
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,GPIO_PIN_RESET);
     HAL_SPI_Transmit(&hspi2,decode_reg1,2,100);
-	for(int i = 0; i < 50; i++){} // 50 microsegundos
+	for(int i = 0; i < 50; i++){} // 50 microseconds
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,GPIO_PIN_SET);
 }
 
@@ -97,7 +155,7 @@ void shutdown_init(){
     uint8_t shutdown_reg1[2] = {0x0C, 0x01};
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,GPIO_PIN_RESET);
     HAL_SPI_Transmit(&hspi2,shutdown_reg1,2,100);
-	for(int i = 0; i < 50; i++){} // 50 microsegundos
+	for(int i = 0; i < 50; i++){} // 50 microseconds
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,GPIO_PIN_SET);
 }
 
@@ -107,40 +165,29 @@ void spi_init()
 	slr_init();
 	intensity_init();
 	decode_init();
+	uint8_t empty[8] = {0};
+	display_array_image(empty);
 }
 
 void transmit(uint8_t column, uint8_t data){
     uint8_t data_string [2]= {column,data};
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,GPIO_PIN_RESET);
     HAL_SPI_Transmit(&hspi2,data_string,2,100);
-    for(int i = 0; i < 50; i++){} // 50 microsegundos
+    for(int i = 0; i < 50; i++){} // 50 microseconds
     HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,GPIO_PIN_SET);
 }
 
 void display_array_image(const uint8_t data[]){
     const int MAX_DIGITS = 8;
-   // uint8_t column;
-//    for (uint8_t i = 0x00; i < MAX_DIGITS; i++){
-//        switch (i){
-//            case 0: column=0x01;break;
-//            case 1: column=0x02;break;
-//            case 2: column=0x03;break;
-//            case 3: column=0x04;break;
-//            case 4: column=0x05;break;
-//            case 5: column=0x06;break;
-//            case 6: column=0x07;break;
-//            case 7: column=0x08;break;
-//            default: column=0x00;break;
-//        }
     for(int j = 0; j < MAX_DIGITS; j++){
         transmit(j+1,data[j]);
     }
 }
 
-void block_space(int spaces[3][3], int x, int y)
-{
-	spaces[x][y] = 1;
-}
+//void block_space(int spaces[3][3], int x, int y)
+//{
+//	spaces[x][y] = 1;
+//}
 
 void apply_move(uint8_t *src, uint8_t *dest)
 {
@@ -209,16 +256,16 @@ void clear_screen()
 	display_array_image(clearData);
 }
 
-void flash_once(){
-    transmit(0x0C,0x00);
-    //  HAL_Delay(10);
-    HAL_Delay(1);
-    transmit(0x0C,0X01);
-    HAL_Delay(100);
-    transmit(0x09,0x00);
-    transmit(0x0B,0x07);
-
-}
+//void flash_once(){
+//    transmit(0x0C,0x00);
+//    //  HAL_Delay(10);
+//    HAL_Delay(1);
+//    transmit(0x0C,0X01);
+//    HAL_Delay(100);
+//    transmit(0x09,0x00);
+//    transmit(0x0B,0x07);
+//
+//}
 
 void set_board(uint8_t * move, uint8_t * board)
 {
@@ -246,35 +293,36 @@ void draw(uint8_t * move, uint8_t * board)
 	display_array_image(temp);
 }
 
-void update_board_spaces(int spaces[9], uint8_t * board)
-{
-	// reset board for fresh copy from spaces
-	uint8_t empty_board[8] = {0};
-	memcpy(board, &empty_board, 8);
-
-	uint8_t cur_move[8] = {0};
-	for (int i = 0; i < 9; i++)
-	{ // player is -1, comp is 1, empty is 0
-			int x = i % 3;
-			int y = div(i, 3);
-		if(spaces[i] == -1)
-		{
-			// figure out math for which two numbers to change moves
-			rest_at(&cur_move, &x, &y, -1);
-			set_board(&cur_move, &board);
-		}
-		else if (spaces[i] == 1)
-		{
-			// same as above
-			rest_at(&cur_move, &x, &y, 1);
-			set_board(&cur_move, &board);
-		}
-		// else don't do anything of course
-
-	}
-}
+//void update_board_spaces(int spaces[9], uint8_t * board)
+//{
+//	// reset board for fresh copy from spaces
+//	uint8_t empty_board[8] = {0};
+//	memcpy(board, &empty_board, 8);
+//
+//	uint8_t cur_move[8] = {0};
+//	for (int i = 0; i < 9; i++)
+//	{ // player is -1, comp is 1, empty is 0
+//			int x = i % 3;
+//			int y = div(i, 3);
+//		if(spaces[i] == -1)
+//		{
+//			// figure out math for which two numbers to change moves
+//			rest_at(&cur_move, &x, &y, -1);
+//			set_board(&cur_move, &board);
+//		}
+//		else if (spaces[i] == 1)
+//		{
+//			// same as above
+//			rest_at(&cur_move, &x, &y, 1);
+//			set_board(&cur_move, &board);
+//		}
+//		// else don't do anything of course
+//
+//	}
+//}
 
 int win(const int board[9]) {
+
     //determines if a player has won, returns 0 otherwise.
     unsigned wins[8][3] = {{0,1,2},{3,4,5},{6,7,8},{0,3,6},{1,4,7},{2,5,8},{0,4,8},{2,4,6}};
     int i;
@@ -286,6 +334,89 @@ int win(const int board[9]) {
     }
     return 0;
 }
+
+//void vPlayGame(void* pvTaskParams )
+//{
+////	int spaces[9] = {0};
+////		  int player = -1;
+////		  int gameWon = 0;
+////		  uint8_t board[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
+////		  uint8_t cur_move[8] = {0};
+////		  int cur_x = 0;
+////		  int cur_y = 0;
+////		  int joyYVal = -1;
+////		  int joyXVal = -1;
+////		  int buttonAVal = -1;
+////
+////		  imageData boardImage;
+//
+//		  //rest_at(&cur_move, &cur_x, &cur_y, player);
+//		  //draw(&cur_move, &board);
+//
+//	for (;;)
+//	{
+//		// game logic goes here
+////		uint8_t imageToSend;
+////		xQueueSend(xQueueDisplay, (void*) &boardImage, (TickType_t)0);
+//		vTaskDelay(1000);
+//	}
+//	vTaskDelete(NULL);
+//}
+//
+//void vSenseJoyY(void* pvTaskParams )
+//{
+//	for (;;)
+//	{
+//		// Joystick Y here
+//		vTaskDelay(1000);
+//	}
+//	vTaskDelete(NULL);
+//}
+//
+//void vSenseJoyX(void* pvTaskParams )
+//{
+//	for (;;)
+//	{
+//		// Joystick X here
+//		vTaskDelay(1000);
+//	}
+//	vTaskDelete(NULL);
+//}
+//
+//void vSenseButtonA(void* pvTaskParams )
+//{
+//	for (;;)
+//	{
+//		// A Button Here
+//		vTaskDelay(1000);
+//	}
+//	vTaskDelete(NULL);
+//}
+
+
+
+void vDisplay( void* pvTaskParams )
+{
+
+	configASSERT(1 == 2);
+
+	for (;;)
+	{
+		uint8_t empty[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
+		display_array_image(empty);
+		//vTaskDelay(100);
+		// display function here
+//		imageData receivedData;
+//		if(xQueueReceive(xQueueDisplay, (void*)&receivedData, (TickType_t)10))
+//		{
+//			display_array_image(empty);
+//		}
+		//draw(&(pvParameters->cur_move), &(pvParameters->board));
+		//vTaskDelay(100);
+	}
+	//vTaskDelete(NULL);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -322,129 +453,99 @@ int main(void)
   MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
 
+
+
+//  struct TaskParams
+//  {
+//	  int spaces[9] = {0};
+//	  int player = -1;
+//	  int gameWon = 0;
+//	  uint8_t board[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
+//	  uint8_t cur_move[8] = {0};
+//	  int cur_x = 0;
+//	  int cur_y = 0;
+//	  int joyYVal = -1;
+//	  int joyXVal = -1;
+//	  int buttonAVal = -1;
+//  } taskParams;
+
+  struct TaskParams taskParams = TaskParams_default;
+
   spi_init();
-  int spaces[9] = {0};
-  int player = -1;
-  int gameWon = 0;
-  uint8_t board[8] = {0x24, 0x24, 0xFF, 0x24, 0x24, 0xFF, 0x24, 0x24};
-  uint8_t cur_move[8] = {0};
-  int cur_x = 0;
-  int cur_y = 0;
   	//display_image_array(temp_board);
 
+//  BaseType_t xJoyYReturn;
+//  TaskHandle_t xJoyYHandle = NULL;
+//  xJoyYReturn = xTaskCreate(
+//		  vSenseJoyY,
+//		  "SenseY",
+//		  100,
+//		  (void*)1,
+//		  tskIDLE_PRIORITY,
+//		  xJoyYHandle);
+//
+//  BaseType_t xJoyXReturn;
+//  TaskHandle_t xJoyXHandle = NULL;
+//  xJoyXHandle = xTaskCreate(
+//		  vSenseJoyX,
+//		  "SenseX",
+//		  100,
+//		  (void*)1,
+//		  tskIDLE_PRIORITY,
+//		  xJoyXHandle);
+//
+//  BaseType_t xButtonAReturn;
+//  TaskHandle_t xButtonAHandle = NULL;
+//  xButtonAHandle = xTaskCreate(
+//		  vSenseButtonA,
+//		  "SenseA",
+//		  100,
+//		  (void*)1,
+//		  tskIDLE_PRIORITY,
+//		  xButtonAHandle);
+  uint8_t errorImage[8] = {12, 33, 66, 77, 44, 33, 99, 33};
+
+  BaseType_t xDisplayReturn;
+  TaskHandle_t xDisplayHandle = NULL;
+//  xDisplayHandle =
+		  xTaskCreate(
+		  vDisplay,
+		  "Display",
+		  1,
+		  NULL,
+		  1000,
+		  NULL);
+//  int isItTrue = xDisplayHandle == pdPASS;
+//  if (xDisplayHandle != pdPASS)
+//  {
+//
+//	  display_array_image(errorImage);
+//  }
+
+//  BaseType_t xPlayGameReturn;
+//  TaskHandle_t xPlayGameHandle = NULL;
+//  xPlayGameHandle = xTaskCreate(
+//		  vPlayGame,
+//		  "PlayGame",
+//		  100,
+//		  (void*)1,
+//		  tskIDLE_PRIORITY,
+//		  xPlayGameHandle);
+
+//  xQueueSense = xQueueCreate(1, sizeof(uint8_t));
+//  xQueueDisplay = xQueueCreate(1, sizeof(imageData));
 
   	//simulate a player's turn for now
-  	rest_at(&cur_move, &cur_x, &cur_y, player); // begin at begining
-  	draw(&cur_move, &board);
+  	//rest_at(taskParams.cur_move, taskParams.cur_x, &taskParams.cur_y, taskParams.player); // begin at begining
+  	//draw(&taskParams.cur_move, &taskParams.board);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-	  if (!gameWon)
-	  {
-		  HAL_ADC_Start(&hadc1);
-		  HAL_ADC_PollForConversion(&hadc1,1);
-		  adcY=(HAL_ADC_GetValue(&hadc1)/500);
-		  HAL_ADC_Stop(&hadc1);
-		  HAL_Delay (1);
+  vTaskStartScheduler();
 
-		  HAL_ADC_Start(&hadc2);
-		  HAL_ADC_PollForConversion(&hadc2,1);
-		  adcX=(HAL_ADC_GetValue(&hadc2)/500);
-		  HAL_ADC_Stop(&hadc2);
-		  HAL_Delay (1);
-
-		  int deadzone[2] = {1,7};
-		  // if in deadzone
-		  if (adcY >= deadzone[0] && adcY <= deadzone[1])
-		  {
-			  // is in deadzone, don't do anything.
-		  }
-
-		  // if up
-		  if (adcY > deadzone[1])
-		  {
-			  // move down once space
-			  move('d',&cur_move,&board,&cur_x,&cur_y,player);
-			  HAL_Delay(175);
-
-		  }
-
-		  // if down
-		  if (adcY < deadzone[0])
-		  {
-			  // move up once space
-			  move('u',&cur_move,&board,&cur_x,&cur_y,player);
-			  HAL_Delay(175);
-		  }
-
-		  if (adcX >= deadzone[0] && adcX <= deadzone[1])
-		  {
-			  // is in deadzone, don't do anything.
-		  }
-
-		  // if left
-		  if (adcX < deadzone[0])
-		  {
-			  // move left one space
-			  move('l',&cur_move,&board,&cur_x,&cur_y,player);
-			  HAL_Delay(175);
-		  }
-
-		  // if right
-		  if (adcX > deadzone[1])
-		  {
-			  // move right once space
-			  move('r',&cur_move,&board,&cur_x,&cur_y,player);
-			  HAL_Delay(175);
-		  }
-
-		  // when l3 click
-		  int buttonIsDown = HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3);
-		  if(buttonIsDown)
-		  {
-			  if (spaces[cur_x + 3*cur_y] == 0)
-			  {
-				  set_board(&cur_move, &board);
-				  spaces[cur_x + 3*cur_y] = player;
-				  player = player * -1;
-				  rest_at(&cur_move, &cur_x, &cur_y, player); // begin at begining
-				  draw(&cur_move, &board);
-			  }
-			  HAL_Delay(300);
-		  }
-		  int winner = win(spaces);
-		  if (winner != 0)
-		  {
-			  // someone has won!
-			  if (winner == -1)
-			  {
-				  // computer won
-				  uint8_t tempBoard[8] = {0x00,0x06,0x06,0x00,0x00,0x60,0x60,0x00};
-				  memcpy(&board, &tempBoard, 8);
-				  gameWon = 1;
-			  }
-			  else
-			  {
-				  // player won
-				  uint8_t tempBoard[8] = {0x00,0x60,0x60,0x00,0x00,0x06,0x06,0x00};
-				  memcpy(&board, &tempBoard, 8);
-				  gameWon = 1;
-			  }
-		  }
-		  else // only actually draw the real board if there is no winner yet
-			  draw(&cur_move, &board);
-	  }
-	  else
-		  display_array_image(board);
-
-  /* USER CODE END WHILE */
-
+  display_array_image(errorImage);
   /* USER CODE BEGIN 3 */
-
-  }
   /* USER CODE END 3 */
 
 }
